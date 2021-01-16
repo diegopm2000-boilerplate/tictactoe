@@ -8,11 +8,11 @@ const { BaseDomainObj } = require('../../shared/domain/BaseDomainObj');
 
 const NAME_DOMAIN_OBJ = 'TicTacToe';
 
-const DEFAULT_BOARD = [
-  [' ', ' ', ' '],
-  [' ', ' ', ' '],
-  [' ', ' ', ' '],
-];
+// const DEFAULT_BOARD = [
+//   [' ', ' ', ' '],
+//   [' ', ' ', ' '],
+//   [' ', ' ', ' '],
+// ];
 
 const STATUS_DRAW = 'STATUS_DRAW';
 const STATUS_PLAYER_X_WON = 'STATUS_PLAYER_X_WON';
@@ -85,16 +85,7 @@ function checkIsDraw(board) {
 class TicTacToe extends BaseDomainObj {
   constructor(data, schemaValidator) {
     super(data, schemaValidator, SCHEMA, NAME_DOMAIN_OBJ);
-    // this.id = data.id;
-    // this.idPlayerX = data.idPlayerX;
-    // this.idPlayerO = data.idPlayerO;
-    // this.status = data.status;
-    // this.board = (data.board != null) ? data.board : DEFAULT_BOARD;
   }
-
-  // get status() {
-  //   return this.status;
-  // }
 
   move(idPlayer, row, column) {
     // Check if the game is alive
