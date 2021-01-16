@@ -1,0 +1,39 @@
+version: '3.5'
+
+services:
+
+  tictactoe-mongodb:
+    image: mongo:4.2.2
+    container_name: tictactoe-mongodb
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
+    ports:
+      - "27018:27017"
+    volumes:
+      - tictactoe-mongodb:/data/db
+    networks:
+      - tictactoe-network
+
+  tictactoe-backend:
+    build: ../tictactoe-backend
+    image: tictactoe-backend
+    container_name: tictactoe-backend
+    environment:
+      - MONGO_URL=mongodb://${MONGO_USER}:${MONGO_PASSWORD}@tictactoe-mongodb:27017
+      - EXPRESS_PORT=8080
+    ports:
+      - "0.0.0.0:8080:8080"
+    command: npm start
+    networks:
+      - tictactoe-network
+    depends_on:
+      - tictactoe-mongodb
+
+volumes:
+  tictactoe-mongodb:
+
+networks:
+  tictactoe-network:
+    name: tictactoe-network
+    driver: bridge

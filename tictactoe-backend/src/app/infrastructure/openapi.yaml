@@ -1,0 +1,156 @@
+openapi: 3.0.0
+info:
+  title: Tic Tac Toe API
+  description: Tic Tac Toe Service API - Clean Architecture NodeJS
+  version: 0.1.0
+
+servers:
+  - url: /api
+
+paths:
+
+  # Healthcheck
+
+  /healthcheck:
+    get:
+      summary: Healthcheck of the application
+      tags:
+        - Healthcheck
+      operationId: healthcheck
+      responses: 
+        "200": 
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+              example:
+                message: 'OK'
+
+  # TicTacToe
+
+  /tictactoes:
+    post: 
+      summary: Create a new tictactoe game
+      tags:
+        - TicTacToe
+      operationId: createGame
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TicTacToeCreationData"
+            example:
+              idPlayerX: yyyyyyyyyyyyyyyyyyyy
+              idPlayerO: zzzzzzzzzzzzzzzzzzzz
+              status: STATUS_ALIVE
+              board: [ [' ', ' ', ' '], [' ', ' ', ' '], [' ', ' ', ' ']]
+
+      responses: 
+        "201": 
+          description: tictactoe game created OK and returned
+          content:
+            application/json:
+              schema: 
+                $ref: "#/components/schemas/TicTacToeData"
+              example:
+                id: xxxxxxxxxxxxxxxxx
+                idPlayerX: yyyyyyyyyyyyyyyyyyyy
+                idPlayerO: zzzzzzzzzzzzzzzzzzzz
+                status: STATUS_ALIVE
+                board: [ [' ', ' ', ' '], [' ', ' ', ' '], [' ', ' ', ' ']]
+
+components:
+
+  # ##################################################################
+  # RESPONSES
+  # ##################################################################
+
+  responses:
+
+    ObjectNotFoundResponse:
+      description: Object not found
+      content:
+        application/json:
+          schema: 
+            $ref: "#/components/schemas/Error"
+          example:
+            code: 404
+            message: Object not found in the system
+
+  # ##################################################################
+  # SCHEMAS
+  # ##################################################################
+
+  schemas:
+
+    Object:
+      type: object
+
+    Success:
+      type: object
+      properties:
+        message:
+          type: string
+      required: ['message']
+
+      additionalProperties: false
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: number
+        message:
+          type: string
+      required: ['code', 'message']
+      additionalProperties: false
+
+    # Id Data
+
+    IdData:
+      type: object
+      properties:
+        id:
+          type: string
+      required:  ['id']
+      additionalProperties: false
+
+    # TicTacToe
+        
+    TicTacToeBasicData:
+      type: object 
+      properties:
+        idPlayerX:
+          type: string
+        idPlayerO:
+          type: string
+        status:
+          type: string
+        board:
+          type: array
+          items:
+            type: array
+            items:
+              type: string
+      required: ['idPlayerX', 'idPlayerO', 'status', 'board']
+      additionalProperties: false
+
+    TicTacToeData:
+      allOf:
+        - $ref: '#/components/schemas/IdData'
+        - $ref: '#/components/schemas/TicTacToeBasicData'
+    
+    TicTacToeCreationData:
+      allOf:
+        - $ref: '#/components/schemas/TicTacToeBasicData'
+
+    TicTacToeUpdateData:
+      allOf:
+        - $ref: '#/components/schemas/TicTacToeBasicData'
+
+    TicTacToeDataList:
+      type: array
+      items:
+        $ref: "#/components/schemas/TicTacToeData"
