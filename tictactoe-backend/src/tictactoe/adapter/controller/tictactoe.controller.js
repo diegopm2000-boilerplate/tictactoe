@@ -7,6 +7,8 @@ const logger = require('../../../shared/infrastructure/log/logFacade');
 const presenter = require('../../../shared/adapter/presenter/httpPresenter');
 
 const createGameUC = require('../../usecase/createGame.usecase');
+const moveUC = require('../../usecase/move.usecase');
+const getGameByIdUC = require('../../usecase/getGameById.usecase');
 
 const repository = require('../repository/mongoose/tictactoe.mongoose.repository');
 
@@ -19,6 +21,24 @@ const MODULE_NAME = '[TicTacToe Controller]';
 // //////////////////////////////////////////////////////////////////////////////
 // Public Methods
 // //////////////////////////////////////////////////////////////////////////////
+
+async function getGameById(req, res, next) {
+  try {
+    // IN
+    const { gameId } = req.params;
+    logger.info(`${MODULE_NAME}:${getGameById.name} (IN) -> gameId: ${gameId}`);
+
+    // Execute Business Logic
+    const result = await getGameByIdUC.execute(logger, presenter, repository, gameId);
+
+    // Return Result
+    logger.info(`${MODULE_NAME}:${getGameById.name} (OUT) -> result: ${JSON.stringify(result)}`);
+    res.status(result.status).json(result.data);
+  } catch (error) {
+    logger.error(`${MODULE_NAME}:${getGameById.name} (ERROR) -> error.stack: ${error.stack}`);
+    next(new Error('Internal Error'));
+  }
+}
 
 async function createGame(req, res, next) {
   try {
@@ -38,6 +58,27 @@ async function createGame(req, res, next) {
   }
 }
 
+async function move(req, res, next) {
+  try {
+    // IN
+    const data = req.body;
+    const { gameId } = req.params;
+    logger.info(`${MODULE_NAME}:${move.name} (IN) -> data: ${JSON.stringify(data)}, gameId: ${gameId}`);
+
+    // Execute Business Logic
+    const result = await moveUC.execute(logger, presenter, schemaValidator, repository, data, gameId);
+
+    // Return Result
+    logger.info(`${MODULE_NAME}:${move.name}} (OUT) -> result: ${JSON.stringify(result)}`);
+    res.status(result.status).json(result.data);
+  } catch (error) {
+    logger.error(`${MODULE_NAME}:${move.name}} (ERROR) -> error.stack: ${error.stack}`);
+    next(new Error('Internal Error'));
+  }
+}
+
 module.exports = {
   createGame,
+  move,
+  getGameById,
 };

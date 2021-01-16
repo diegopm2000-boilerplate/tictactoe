@@ -17,15 +17,10 @@ const NAME_DOMAIN_OBJ = 'TicTacToe';
 const STATUS_DRAW = 'STATUS_DRAW';
 const STATUS_PLAYER_X_WON = 'STATUS_PLAYER_X_WON';
 const STATUS_PLAYER_O_WON = 'STATUS_PLAYER_O_WON';
-const STATUS_ALIVE = 'STATUS_ALIVE';
-const STATUS_PLAYER_X_TURN = 'PLAYER_X_TURN';
-const STATUS_PLAYER_O_TURN = 'PLAYER_O_TURN';
+const STATUS_PLAYER_X_TURN = 'STATUS_PLAYER_X_TURN';
+const STATUS_PLAYER_O_TURN = 'STATUS_PLAYER_O_TURN';
 const X_LINE = 'XXX';
 const O_LINE = 'OOO';
-
-const ERR_WRONG_TURN = 'Wrong turn';
-const ERR_STATUS_IS_NOT_ALIVE = 'Status is not alive. The game has finished.';
-const ERR_SQUARE_NOT_EMPTY = 'Square is not empty';
 
 const SCHEMA = {
   $schema: 'http://json-schema.org/schema#',
@@ -87,35 +82,53 @@ class TicTacToe extends BaseDomainObj {
     super(data, schemaValidator, SCHEMA, NAME_DOMAIN_OBJ);
   }
 
+  static get ERR_WRONG_TURN() { return 'Wrong turn'; }
+
+  static get ERR_STATUS_IS_NOT_ALIVE() { return 'Status is not alive. The game has finished.'; }
+
+  static get ERR_SQUARE_NOT_EMPTY() { return 'Square is not empty'; }
+
   move(idPlayer, row, column) {
+    const result = {};
+
+    let error;
     // Check if the game is alive
-    if (this.status !== STATUS_ALIVE) {
-      throw new Error(ERR_STATUS_IS_NOT_ALIVE);
+    if (this.status !== STATUS_PLAYER_X_TURN && this.status !== STATUS_PLAYER_O_TURN) {
+      error = new Error(TicTacToe.ERR_STATUS_IS_NOT_ALIVE);
     }
     // Check if the turn is correct
-    if ((idPlayer === this.idPlayerX && this.status === STATUS_PLAYER_O_TURN)
-    || (idPlayer === this.idPlayerO && this.status === STATUS_PLAYER_X_TURN)) {
-      throw new Error(ERR_WRONG_TURN);
+    if ((!error) && ((idPlayer === this.idPlayerX && this.status === STATUS_PLAYER_O_TURN)
+    || (idPlayer === this.idPlayerO && this.status === STATUS_PLAYER_X_TURN))) {
+      error = new Error(TicTacToe.ERR_WRONG_TURN);
     }
     // Check if the square is empty
-    if (this.board[row][column] !== ' ') {
-      throw new Error(ERR_SQUARE_NOT_EMPTY);
+    if (!error && this.board[row][column] !== ' ') {
+      error = new Error(TicTacToe.ERR_SQUARE_NOT_EMPTY);
     }
 
-    const playerSymbol = (idPlayer === this.idPlayerX) ? 'X' : 'O';
+    if (!error) {
+      const playerSymbol = (idPlayer === this.idPlayerX) ? 'X' : 'O';
 
-    // Apply move
-    this.board[row][column] = playerSymbol;
+      // Apply move
+      this.board[row][column] = playerSymbol;
 
-    // Check if player wins
-    if (checkPlayerSymbolWins(this.board, playerSymbol)) {
-      this.status = (idPlayer === this.idPlayerX) ? STATUS_PLAYER_X_WON : STATUS_PLAYER_O_WON;
+      // swap turn
+      this.status = (this.status === STATUS_PLAYER_X_TURN) ? STATUS_PLAYER_O_TURN : STATUS_PLAYER_X_TURN;
+
+      // Check if player wins
+      if (checkPlayerSymbolWins(this.board, playerSymbol)) {
+        this.status = (idPlayer === this.idPlayerX) ? STATUS_PLAYER_X_WON : STATUS_PLAYER_O_WON;
+      }
+
+      // check if is a draw
+      if (checkIsDraw(this.board)) {
+        this.status = STATUS_DRAW;
+      }
+    } else {
+      result.error = error;
     }
 
-    // check if is a draw
-    if (checkIsDraw(this.board)) {
-      this.status = STATUS_DRAW;
-    }
+    return result;
   }
 }
 

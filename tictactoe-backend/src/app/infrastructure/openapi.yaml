@@ -58,8 +58,73 @@ paths:
                 id: xxxxxxxxxxxxxxxxx
                 idPlayerX: yyyyyyyyyyyyyyyyyyyy
                 idPlayerO: zzzzzzzzzzzzzzzzzzzz
-                status: STATUS_ALIVE
+                status: STATUS_PLAYER_X_TURN
                 board: [ [' ', ' ', ' '], [' ', ' ', ' '], [' ', ' ', ' ']]
+
+  /tictactoes/{gameId}:
+    get:
+      summary: Get the tictactoe game by id
+      tags:
+        - TicTacToe
+      operationId: getGameById
+      parameters:
+        - name: gameId
+          in: path
+          description: tictactoe game Id
+          required: true
+          schema:
+            type: string
+
+      responses: 
+        "200": 
+          description: Data returned
+          content:
+            application/json:
+              schema: 
+                $ref: "#/components/schemas/TicTacToeData"
+              example:
+                id: xxxxxxxxxxxxxxxxx
+                idPlayerX: yyyyyyyyyyyyyyyyyyyy
+                idPlayerO: zzzzzzzzzzzzzzzzzzzz
+                status: STATUS_PLAYER_X_TURN
+                board: [ [' ', ' ', ' '], [' ', ' ', ' '], [' ', ' ', ' ']]
+        "404": 
+          $ref: '#/components/responses/ObjectNotFoundResponse'
+
+  /tictactoes/{gameId}/move:
+    put:
+      summary: Execute a movement in the game
+      tags:
+        - TicTacToe
+      operationId: move
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GameMoveData"
+      parameters:
+        - name: gameId
+          in: path
+          description: tictactoe game Id
+          required: true
+          schema:
+            type: string
+      responses: 
+        "200": 
+          description: game updated OK and data returned
+          content:
+            application/json:
+              schema: 
+                $ref: "#/components/schemas/TicTacToeData"
+              example:
+                id: xxxxxxxxxxxxxxxxx
+                idPlayerX: yyyyyyyyyyyyyyyyyyyy
+                idPlayerO: zzzzzzzzzzzzzzzzzzzz
+                status: PLAYER_O_TURN
+                board: [ ['X', ' ', ' '], [' ', ' ', ' '], [' ', ' ', ' ']]
+        "404": 
+          $ref: '#/components/responses/ObjectNotFoundResponse'
 
 components:
 
@@ -154,3 +219,13 @@ components:
       type: array
       items:
         $ref: "#/components/schemas/TicTacToeData"
+
+    GameMoveData:
+      type: object 
+      properties:
+        idPlayer:
+          type: string
+        row:
+          type: number
+        status:
+          type: number
