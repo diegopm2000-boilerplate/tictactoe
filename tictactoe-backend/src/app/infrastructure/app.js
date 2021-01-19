@@ -62,6 +62,7 @@ const initExpressOpenAPI = (expressApp) => {
       healthcheck: healthcheckController.healthcheck,
       createGame: tictactoeController.createGame,
       move: tictactoeController.move,
+      joinGame: tictactoeController.joinGame,
       getGameById: tictactoeController.getGameById,
     },
   };

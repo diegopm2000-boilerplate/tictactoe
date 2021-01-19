@@ -9,6 +9,7 @@ const presenter = require('../../../shared/adapter/presenter/httpPresenter');
 const createGameUC = require('../../usecase/createGame.usecase');
 const moveUC = require('../../usecase/move.usecase');
 const getGameByIdUC = require('../../usecase/getGameById.usecase');
+const joinGameUC = require('../../usecase/joinGame.usecase');
 
 const repository = require('../repository/mongoose/tictactoe.mongoose.repository');
 
@@ -50,10 +51,29 @@ async function createGame(req, res, next) {
     const result = await createGameUC.execute(logger, presenter, uniqIdGenerator, schemaValidator, repository, data);
 
     // Return Result
-    logger.info(`${MODULE_NAME}:${createGame.name}} (OUT) -> result: ${JSON.stringify(result)}`);
+    logger.info(`${MODULE_NAME}:${createGame.name} (OUT) -> result: ${JSON.stringify(result)}`);
     res.status(result.status).json(result.data);
   } catch (error) {
-    logger.error(`${MODULE_NAME}:${createGame.name}} (ERROR) -> error.stack: ${error.stack}`);
+    logger.error(`${MODULE_NAME}:${createGame.name} (ERROR) -> error.stack: ${error.stack}`);
+    next(new Error('Internal Error'));
+  }
+}
+
+async function joinGame(req, res, next) {
+  try {
+    // IN
+    const { gameId } = req.params;
+    const { playerId } = req.body;
+    logger.info(`${MODULE_NAME}:${joinGame.name} (IN) -> gameId: ${gameId}, playerId: ${playerId}`);
+
+    // Execute Business Logic
+    const result = await joinGameUC.execute(logger, presenter, schemaValidator, repository, gameId, playerId);
+
+    // Return Result
+    logger.info(`${MODULE_NAME}:${joinGame.name} (OUT) -> result: ${JSON.stringify(result)}`);
+    res.status(result.status).json(result.data);
+  } catch (error) {
+    logger.error(`${MODULE_NAME}:${joinGame.name} (ERROR) -> error.stack: ${error.stack}`);
     next(new Error('Internal Error'));
   }
 }
@@ -69,16 +89,17 @@ async function move(req, res, next) {
     const result = await moveUC.execute(logger, presenter, schemaValidator, repository, data, gameId);
 
     // Return Result
-    logger.info(`${MODULE_NAME}:${move.name}} (OUT) -> result: ${JSON.stringify(result)}`);
+    logger.info(`${MODULE_NAME}:${move.name} (OUT) -> result: ${JSON.stringify(result)}`);
     res.status(result.status).json(result.data);
   } catch (error) {
-    logger.error(`${MODULE_NAME}:${move.name}} (ERROR) -> error.stack: ${error.stack}`);
+    logger.error(`${MODULE_NAME}:${move.name} (ERROR) -> error.stack: ${error.stack}`);
     next(new Error('Internal Error'));
   }
 }
 
 module.exports = {
   createGame,
+  joinGame,
   move,
   getGameById,
 };

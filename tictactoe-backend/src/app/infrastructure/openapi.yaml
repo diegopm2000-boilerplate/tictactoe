@@ -43,9 +43,6 @@ paths:
               $ref: "#/components/schemas/TicTacToeCreationData"
             example:
               idPlayerX: yyyyyyyyyyyyyyyyyyyy
-              idPlayerO: zzzzzzzzzzzzzzzzzzzz
-              status: STATUS_ALIVE
-              board: [ [' ', ' ', ' '], [' ', ' ', ' '], [' ', ' ', ' ']]
 
       responses: 
         "201": 
@@ -56,8 +53,8 @@ paths:
                 $ref: "#/components/schemas/TicTacToeData"
               example:
                 id: xxxxxxxxxxxxxxxxx
-                idPlayerX: yyyyyyyyyyyyyyyyyyyy
-                idPlayerO: zzzzzzzzzzzzzzzzzzzz
+                playerIdX: yyyyyyyyyyyyyyyyyyyy
+                playerIdO: zzzzzzzzzzzzzzzzzzzz
                 status: STATUS_PLAYER_X_TURN
                 board: [ [' ', ' ', ' '], [' ', ' ', ' '], [' ', ' ', ' ']]
 
@@ -84,8 +81,8 @@ paths:
                 $ref: "#/components/schemas/TicTacToeData"
               example:
                 id: xxxxxxxxxxxxxxxxx
-                idPlayerX: yyyyyyyyyyyyyyyyyyyy
-                idPlayerO: zzzzzzzzzzzzzzzzzzzz
+                playerIdX: yyyyyyyyyyyyyyyyyyyy
+                playerIdO: zzzzzzzzzzzzzzzzzzzz
                 status: STATUS_PLAYER_X_TURN
                 board: [ [' ', ' ', ' '], [' ', ' ', ' '], [' ', ' ', ' ']]
         "404": 
@@ -119,10 +116,46 @@ paths:
                 $ref: "#/components/schemas/TicTacToeData"
               example:
                 id: xxxxxxxxxxxxxxxxx
-                idPlayerX: yyyyyyyyyyyyyyyyyyyy
-                idPlayerO: zzzzzzzzzzzzzzzzzzzz
+                playerIdX: yyyyyyyyyyyyyyyyyyyy
+                playerIdO: zzzzzzzzzzzzzzzzzzzz
                 status: PLAYER_O_TURN
                 board: [ ['X', ' ', ' '], [' ', ' ', ' '], [' ', ' ', ' ']]
+        "404": 
+          $ref: '#/components/responses/ObjectNotFoundResponse'
+
+  /tictactoes/{gameId}/join:
+    put:
+      summary: Join player to a game
+      tags:
+        - TicTacToe
+      operationId: joinGame
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GameJoinData"
+      parameters:
+        - name: gameId
+          in: path
+          description: tictactoe game Id
+          required: true
+          schema:
+            type: string
+
+      responses: 
+        "200": 
+          description: game updated OK and data returned
+          content:
+            application/json:
+              schema: 
+                $ref: "#/components/schemas/TicTacToeData"
+              example:
+                id: xxxxxxxxxxxxxxxxx
+                playerIdX: yyyyyyyyyyyyyyyyyyyy
+                playerIdO: zzzzzzzzzzzzzzzzzzzz
+                status: PLAYER_X_TURN
+                board: [ [' ', ' ', ' '], [' ', ' ', ' '], [' ', ' ', ' ']]
         "404": 
           $ref: '#/components/responses/ObjectNotFoundResponse'
 
@@ -187,9 +220,9 @@ components:
     TicTacToeBasicData:
       type: object 
       properties:
-        idPlayerX:
+        playerIdX:
           type: string
-        idPlayerO:
+        playerIdO:
           type: string
         status:
           type: string
@@ -199,7 +232,7 @@ components:
             type: array
             items:
               type: string
-      required: ['idPlayerX', 'idPlayerO', 'status', 'board']
+      required: ['playerIdX', 'playerIdO', 'status', 'board']
       additionalProperties: false
 
     TicTacToeData:
@@ -208,8 +241,12 @@ components:
         - $ref: '#/components/schemas/TicTacToeBasicData'
     
     TicTacToeCreationData:
-      allOf:
-        - $ref: '#/components/schemas/TicTacToeBasicData'
+      type: object 
+      properties:
+        playerIdX:
+          type: string
+        playerIdO:
+          type: string
 
     TicTacToeUpdateData:
       allOf:
@@ -223,9 +260,15 @@ components:
     GameMoveData:
       type: object 
       properties:
-        idPlayer:
+        playerId:
           type: string
         row:
           type: number
         status:
           type: number
+
+    GameJoinData:
+      type: object 
+      properties:
+        playerId:
+          type: string

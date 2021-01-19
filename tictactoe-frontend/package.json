@@ -1,0 +1,20 @@
+{
+  "name": "tictactoe-frontend",
+  "version": "0.1.0",
+  "description": "TicTacToe frontend - basic frontend - no html framework - no css framework",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Diego Perez Molinero",
+  "license": "ISC",
+  "devDependencies": {
+    "eslint": "^7.17.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-plugin-import": "^2.22.1"
+  },
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}

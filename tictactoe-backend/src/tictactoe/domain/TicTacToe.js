@@ -8,12 +8,14 @@ const { BaseDomainObj } = require('../../shared/domain/BaseDomainObj');
 
 const NAME_DOMAIN_OBJ = 'TicTacToe';
 
-// const DEFAULT_BOARD = [
-//   [' ', ' ', ' '],
-//   [' ', ' ', ' '],
-//   [' ', ' ', ' '],
-// ];
+const DEFAULT_BOARD = [
+  [' ', ' ', ' '],
+  [' ', ' ', ' '],
+  [' ', ' ', ' '],
+];
 
+const STATUS_WAITING_PLAYER = 'STATUS_WAITNG_PLAYER';
+const STATUS_NOT_WAITING_PLAYER = 'STATUS_NOT_WAITNG_PLAYER';
 const STATUS_DRAW = 'STATUS_DRAW';
 const STATUS_PLAYER_X_WON = 'STATUS_PLAYER_X_WON';
 const STATUS_PLAYER_O_WON = 'STATUS_PLAYER_O_WON';
@@ -32,7 +34,7 @@ const SCHEMA = {
     status: { type: 'string', maxLength: 45 }, // TODO debe coger uno de los valores permitidos
     board: { type: 'array' }, // TODO ver si se puede limitar el número de filas y columnas en el esquema
   },
-  required: ['id', 'idPlayerX', 'idPlayerO', 'status'],
+  required: ['id'],
   additionalProperties: false,
 };
 
@@ -80,6 +82,16 @@ function checkIsDraw(board) {
 class TicTacToe extends BaseDomainObj {
   constructor(data, schemaValidator) {
     super(data, schemaValidator, SCHEMA, NAME_DOMAIN_OBJ);
+
+    // Set the status if needed
+    if (this.idPlayerX == null || this.idPlayerO == null) {
+      this.status = STATUS_WAITING_PLAYER;
+    }
+
+    // Set the board if needed
+    if (this.board == null) {
+      this.board = DEFAULT_BOARD;
+    }
   }
 
   static get ERR_WRONG_TURN() { return 'Wrong turn'; }
@@ -88,19 +100,54 @@ class TicTacToe extends BaseDomainObj {
 
   static get ERR_SQUARE_NOT_EMPTY() { return 'Square is not empty'; }
 
+  static get ERR_STATUS_WAITING_ANOTHER_PLAYER() { return 'Waiting another player'; }
+
+  static get ERR_STATUS_NOT_WAITING_ANOTHER_PLAYER() { return 'Not Waiting another player'; }
+
+  joinPlayer(idPlayer) {
+    const result = {};
+
+    let error;
+    // Check if the game is not waiting another player
+    if (this.status !== STATUS_WAITING_PLAYER) {
+      error = new Error(TicTacToe.ERR_STATUS_WAITING_ANOTHER_PLAYER);
+    }
+
+    if (!error) {
+      // Assign player
+      if (this.idPlayerX == null) {
+        this.idPlayerX = idPlayer;
+      } else {
+        this.idPlayerO = idPlayer;
+      }
+      // Set status
+      this.status = STATUS_PLAYER_X_TURN;
+    } else {
+      result.error = error;
+    }
+
+    return result;
+  }
+
   move(idPlayer, row, column) {
     const result = {};
 
     let error;
-    // Check if the game is alive
-    if (this.status !== STATUS_PLAYER_X_TURN && this.status !== STATUS_PLAYER_O_TURN) {
+    // Check if the game is waiting another player
+    if (this.status === STATUS_WAITING_PLAYER) {
+      error = new Error(TicTacToe.ERR_STATUS_WAITING_ANOTHER_PLAYER);
+    }
+    // Check if the game has finished
+    if ((!error) && (this.status === STATUS_DRAW || this.status === STATUS_PLAYER_X_WON || this.status === STATUS_PLAYER_O_WON)) {
       error = new Error(TicTacToe.ERR_STATUS_IS_NOT_ALIVE);
     }
+
     // Check if the turn is correct
     if ((!error) && ((idPlayer === this.idPlayerX && this.status === STATUS_PLAYER_O_TURN)
     || (idPlayer === this.idPlayerO && this.status === STATUS_PLAYER_X_TURN))) {
       error = new Error(TicTacToe.ERR_WRONG_TURN);
     }
+
     // Check if the square is empty
     if (!error && this.board[row][column] !== ' ') {
       error = new Error(TicTacToe.ERR_SQUARE_NOT_EMPTY);
