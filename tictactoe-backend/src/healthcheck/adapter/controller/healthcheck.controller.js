@@ -1,7 +1,6 @@
 // healthcheck.controller.js
 
 const logger = require('../../../shared/infrastructure/log/logFacade');
-const presenter = require('../../../shared/adapter/presenter/httpPresenter');
 const healthcheckUC = require('../../usecase/healthcheck.usecase');
 
 // //////////////////////////////////////////////////////////////////////////////
@@ -14,20 +13,23 @@ const MODULE_NAME = '[healthcheck Controller]';
 // Public Methods
 // //////////////////////////////////////////////////////////////////////////////
 
-exports.healthcheck = async (req, res, next) => {
+async function healthcheck(req, res, next) {
   try {
-    const funcName = 'healthcheck';
     // IN
-    logger.info(`${MODULE_NAME}:${funcName} (IN) -> no params`);
+    logger.info(`${MODULE_NAME}:${healthcheck.name} (IN) -> no params`);
 
     // Business Logic
-    const result = await healthcheckUC.execute(logger, presenter);
+    const result = await healthcheckUC.healthcheck();
 
     // Return result
-    logger.info(`${MODULE_NAME}:${funcName} (OUT) -> result: ${JSON.stringify(result)}`);
+    logger.info(`${MODULE_NAME}:${healthcheck.name} (OUT) -> result: ${JSON.stringify(result)}`);
     res.status(result.status).json(result.data);
   } catch (error) {
-    logger.error(`${MODULE_NAME} (ERROR) -> error.stack: ${error.stack}`);
+    logger.error(`${MODULE_NAME}:${healthcheck.name} (ERROR) -> error.stack: ${error.stack}`);
     next(new Error('Internal Error'));
   }
+}
+
+module.exports = {
+  healthcheck,
 };

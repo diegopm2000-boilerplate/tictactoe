@@ -23,12 +23,35 @@ services:
       - MONGO_URL=mongodb://${MONGO_USER}:${MONGO_PASSWORD}@tictactoe-mongodb:27017
       - EXPRESS_PORT=8080
     ports:
-      - "0.0.0.0:8080:8080"
+      - "0.0.0.0:8083:8080"
     command: npm start
     networks:
       - tictactoe-network
     depends_on:
       - tictactoe-mongodb
+
+  tictactoe-haproxy:
+    image: haproxy:2.3.4
+    container_name: tictactoe-haproxy
+    ports:
+      - "0.0.0.0:8080:8080"
+    volumes:
+      - ./haproxy/:/usr/local/etc/haproxy:ro
+    networks:
+      - tictactoe-network
+      - im-network
+
+
+  # tictactoe-frontend:
+  #   build: ../tictactoe-frontend
+  #   image: tictactoe-frontend
+  #   container_name: tictactoe-frontend
+  #   ports:
+  #     - "0.0.0.0:3010:80"
+  #   networks:
+  #     - tictactoe-network
+  #   depends_on:
+  #     - tictactoe-backend
 
 volumes:
   tictactoe-mongodb:
@@ -37,3 +60,5 @@ networks:
   tictactoe-network:
     name: tictactoe-network
     driver: bridge
+  im-network:
+    external: true

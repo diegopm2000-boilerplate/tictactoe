@@ -7,12 +7,20 @@ const swaggerUi = require('swagger-ui-express');
 const YAML = require('yamljs');
 
 const logger = require('../../shared/infrastructure/log/logFacade');
+const presenter = require('../../shared/adapter/presenter/httpPresenter');
 
 const healthcheckController = require('../../healthcheck/adapter/controller/healthcheck.controller');
 const tictactoeController = require('../../tictactoe/adapter/controller/tictactoe.controller');
 
+const tictactoeMongooseRepository = require('../../tictactoe/adapter/repository/mongoose/tictactoe.mongoose.repository');
+
 const webSecurity = require('../../shared/infrastructure/util/webSecurity');
 const mongoInfra = require('../../shared/infrastructure/database/mongo/mongo.infra');
+const uniqIdGenerator = require('../../shared/infrastructure/util/uniqIdGenerator');
+const schemaValidator = require('../../shared/infrastructure/util/schemaValidator');
+
+const healthcheckUC = require('../../healthcheck/usecase/healthcheck.usecase');
+const tictactoeUC = require('../../tictactoe/usecase/tictactoe.usecase');
 
 // //////////////////////////////////////////////////////////////////////////////
 // PROPERTIES & CONSTANTS
@@ -27,30 +35,31 @@ const API_DOCUMENT = './src/app/infrastructure/openapi.yaml';
 // //////////////////////////////////////////////////////////////////////////////
 
 // eslint-disable-next-line no-unused-vars
-const errorHandler = (err, req, res, next) => {
-  logger.error(`${MODULE_NAME} (ERROR) --> error: ${err.stack}`);
+function errorHandler(err, req, res, next) {
+  logger.error(`${MODULE_NAME}:${errorHandler.name} (ERROR) --> error: ${err.stack}`);
 
   const status = (err.status) ? err.status : 500;
   const errorObj = { code: status, message: err.message };
   res.status(status).json(errorObj);
-};
+}
 
 // eslint-disable-next-line no-unused-vars
-const routeNotFoundErrorHandler = (req, res, next) => {
+function routeNotFoundErrorHandler(req, res, next) {
   const errorObj = { code: 404, message: `Cannot ${req.method} ${req.path}` };
   res.status(404).json(errorObj);
-};
+}
 
-const initExpress = (expressConfig) => {
+function initExpress(expressConfig) {
   logger.debug(`${MODULE_NAME}:${initExpress.name} (IN) -> expressConfig: ${JSON.stringify(expressConfig)}`);
   const expressApp = express();
 
   expressApp.listen(expressConfig.port);
 
+  logger.debug(`${MODULE_NAME}:${initExpress.name} (OUT) -> expressApp: <<expressApp>>`);
   return expressApp;
-};
+}
 
-const initExpressOpenAPI = (expressApp) => {
+function initExpressOpenAPI(expressApp) {
   logger.debug(`${MODULE_NAME}:${initExpressOpenAPI.name} (IN) -> expressApp: <<expressApp>>`);
 
   const options = {
@@ -68,12 +77,29 @@ const initExpressOpenAPI = (expressApp) => {
   };
 
   expressOpenapi.initialize(options);
-};
+  logger.debug(`${MODULE_NAME}:${initExpressOpenAPI.name} (OUT) -> Done`);
+}
 
-const initSwaggerUI = (expressApp) => {
+function initSwaggerUI(expressApp) {
   const swaggerDocument = YAML.load(API_DOCUMENT);
   expressApp.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-};
+}
+
+function initHealthcheckUC() {
+  logger.debug(`${MODULE_NAME}:${initHealthcheckUC.name} (IN) -> no params`);
+
+  healthcheckUC.init(logger, presenter);
+
+  logger.debug(`${MODULE_NAME}:${initHealthcheckUC.name} (OUT) -> Done`);
+}
+
+function initTicTacToeUC() {
+  logger.debug(`${MODULE_NAME}:${initTicTacToeUC.name} (IN) -> no params`);
+
+  tictactoeUC.init(logger, presenter, tictactoeMongooseRepository, uniqIdGenerator, schemaValidator);
+
+  logger.debug(`${MODULE_NAME}:${initTicTacToeUC.name} (OUT) -> Done`);
+}
 
 // //////////////////////////////////////////////////////////////////////////////
 // PUBLIC METHODS
@@ -105,10 +131,11 @@ exports.init = async () => {
   expressApp.use(routeNotFoundErrorHandler);
 
   // 8. Mongo init
-  const mongoOptions = {
-    mongoURL: process.env.MONGO_URL,
-  };
-  await mongoInfra.init(mongoOptions);
+  await mongoInfra.init({ mongoURL: process.env.MONGO_URL });
+
+  // 9. User UseCases
+  initHealthcheckUC();
+  initTicTacToeUC();
 
   // 7. App Start Result
   const result = true;

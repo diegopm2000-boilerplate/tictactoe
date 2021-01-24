@@ -1,17 +1,7 @@
 // tictactoe.controller.js
 
-const uniqIdGenerator = require('../../../shared/infrastructure/util/uniqIdGenerator');
-const schemaValidator = require('../../../shared/infrastructure/util/schemaValidator');
-
 const logger = require('../../../shared/infrastructure/log/logFacade');
-const presenter = require('../../../shared/adapter/presenter/httpPresenter');
-
-const createGameUC = require('../../usecase/createGame.usecase');
-const moveUC = require('../../usecase/move.usecase');
-const getGameByIdUC = require('../../usecase/getGameById.usecase');
-const joinGameUC = require('../../usecase/joinGame.usecase');
-
-const repository = require('../repository/mongoose/tictactoe.mongoose.repository');
+const tictactoeGameUC = require('../../usecase/tictactoe.usecase');
 
 // //////////////////////////////////////////////////////////////////////////////
 // Properties & Constants
@@ -30,7 +20,7 @@ async function getGameById(req, res, next) {
     logger.info(`${MODULE_NAME}:${getGameById.name} (IN) -> gameId: ${gameId}`);
 
     // Execute Business Logic
-    const result = await getGameByIdUC.execute(logger, presenter, repository, gameId);
+    const result = await tictactoeGameUC.getGameById(gameId);
 
     // Return Result
     logger.info(`${MODULE_NAME}:${getGameById.name} (OUT) -> result: ${JSON.stringify(result)}`);
@@ -48,7 +38,7 @@ async function createGame(req, res, next) {
     logger.info(`${MODULE_NAME}:${createGame.name} (IN) -> data: ${JSON.stringify(data)}`);
 
     // Execute Business Logic
-    const result = await createGameUC.execute(logger, presenter, uniqIdGenerator, schemaValidator, repository, data);
+    const result = await tictactoeGameUC.createGame(data);
 
     // Return Result
     logger.info(`${MODULE_NAME}:${createGame.name} (OUT) -> result: ${JSON.stringify(result)}`);
@@ -67,7 +57,7 @@ async function joinGame(req, res, next) {
     logger.info(`${MODULE_NAME}:${joinGame.name} (IN) -> gameId: ${gameId}, playerId: ${playerId}`);
 
     // Execute Business Logic
-    const result = await joinGameUC.execute(logger, presenter, schemaValidator, repository, gameId, playerId);
+    const result = await tictactoeGameUC.joinGame(gameId, playerId);
 
     // Return Result
     logger.info(`${MODULE_NAME}:${joinGame.name} (OUT) -> result: ${JSON.stringify(result)}`);
@@ -86,7 +76,7 @@ async function move(req, res, next) {
     logger.info(`${MODULE_NAME}:${move.name} (IN) -> data: ${JSON.stringify(data)}, gameId: ${gameId}`);
 
     // Execute Business Logic
-    const result = await moveUC.execute(logger, presenter, schemaValidator, repository, data, gameId);
+    const result = await tictactoeGameUC.move(data, gameId);
 
     // Return Result
     logger.info(`${MODULE_NAME}:${move.name} (OUT) -> result: ${JSON.stringify(result)}`);

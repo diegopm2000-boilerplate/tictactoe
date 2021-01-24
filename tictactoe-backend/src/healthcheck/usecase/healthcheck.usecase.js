@@ -6,20 +6,33 @@
 
 const MODULE_NAME = '[healthcheck UseCase]';
 
+let logger;
+let presenter;
+
 // //////////////////////////////////////////////////////////////////////////////
 // Public Methods
 // //////////////////////////////////////////////////////////////////////////////
 
-exports.execute = async (logger, presenter) => {
+function init(loggerIN, presenterIN) {
+  logger = loggerIN;
+  presenter = presenterIN;
+}
+
+async function healthcheck() {
   // IN
-  logger.debug(`${MODULE_NAME} (IN)  -> no params`);
+  logger.debug(`${MODULE_NAME}:${healthcheck.name} (IN)  -> no params`);
 
   // Prepare message result
   const innerResult = { message: 'OK' };
-  logger.debug(`${MODULE_NAME} (MID) -> innerResult: ${JSON.stringify(innerResult)}`);
+  logger.debug(`${MODULE_NAME}:${healthcheck.name} (MID) -> innerResult: ${JSON.stringify(innerResult)}`);
 
   // Build & Return result
   const result = presenter.presentObject(innerResult);
-  logger.debug(`${MODULE_NAME} (OUT) -> result: ${JSON.stringify(result)}`);
+  logger.debug(`${MODULE_NAME}:${healthcheck.name} (OUT) -> result: ${JSON.stringify(result)}`);
   return result;
+}
+
+module.exports = {
+  init,
+  healthcheck,
 };
