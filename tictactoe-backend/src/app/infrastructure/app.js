@@ -49,6 +49,7 @@ function loadConfig() {
   config.privateRoutes = process.env.PRIVATE_ROUTES;
   config.tokenVerifyEndpoint = process.env.TOKEN_VERIFY_ENDPOINT;
   config.tokenRefreshEndpoint = process.env.TOKEN_REFRESH_ENDPOINT;
+  config.getUserByTokenEndpoint = process.env.GET_USER_BY_TOKEN_ENDPOINT;
   config.mongoURL = process.env.MONGO_URL;
 
   logger.debug(`${MODULE_NAME}:${loadConfig.name} (MID) -> config loaded: ${JSON.stringify(config)}`);
@@ -109,11 +110,12 @@ function initSwaggerUI(expressApp) {
   expressApp.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 }
 
-function initPrivateRouting(expressApp, privateRoutes, tokenVerifyEndpoint, tokenRefreshEndpoint) {
-  logger.debug(`${MODULE_NAME}:${initPrivateRouting.name} (IN) -> expressApp: <<expressApp>>, privateRoutes: ${privateRoutes}, tokenVerifyEndpoint: ${tokenVerifyEndpoint}`);
+function initPrivateRouting(expressApp, privateRoutes, tokenVerifyEndpoint, tokenRefreshEndpoint, getUserByTokenEndpoint) {
+  logger.debug(`${MODULE_NAME}:${initPrivateRouting.name} (IN) -> expressApp: <<expressApp>>, privateRoutes: ${privateRoutes},
+  tokenVerifyEndpoint: ${tokenVerifyEndpoint}, getUserByTokenEndpoint: ${getUserByTokenEndpoint}`);
 
   if (privateRoutes) {
-    authMiddleware.init(tokenVerifyEndpoint, tokenRefreshEndpoint);
+    authMiddleware.init(tokenVerifyEndpoint, tokenRefreshEndpoint, getUserByTokenEndpoint);
     logger.debug(`${MODULE_NAME}:${initPrivateRouting.name} (MID) -> init privateroutes in express`);
     expressApp.all(privateRoutes, authMiddleware.authenticate);
   }
@@ -155,7 +157,7 @@ exports.init = async () => {
   webSecurity.init(expressApp);
 
   // 5. Private Routes - (put this before ExpresOpenApi Middleware)
-  initPrivateRouting(expressApp, config.privateRoutes, config.tokenVerifyEndpoint, config.tokenRefreshEndpoint);
+  initPrivateRouting(expressApp, config.privateRoutes, config.tokenVerifyEndpoint, config.tokenRefreshEndpoint, config.getUserByTokenEndpoint);
 
   // 6. Init ExpressOpenApi
   await initExpressOpenAPI(expressApp);

@@ -109,12 +109,17 @@ async function joinGame(gameId, playerId) {
   return result;
 }
 
-async function move(dataIN, id) {
+async function move(dataIN, gameId, userId) {
   // IN
-  logger.debug(`${MODULE_NAME}:${move.name} (IN)  -> dataIN: ${JSON.stringify(dataIN)}, id: ${id}`);
+  logger.debug(`${MODULE_NAME}:${move.name} (IN)  -> dataIN: ${JSON.stringify(dataIN)}, gameId: ${gameId}, userId: ${userId}`);
+
+  // Check that the userId was the same of the dataIN.idPlayer
+  if (dataIN.idPlayer !== userId) {
+    return presenter.presentNotAuthorized();
+  }
 
   // Load game from repository
-  const objectDB = await repository.getById(id);
+  const objectDB = await repository.getById(gameId);
   if (objectDB == null) {
     return presenter.presentObjectNotFound();
   }
@@ -137,11 +142,11 @@ async function move(dataIN, id) {
   }
 
   // Persistence
-  const innerResult = await repository.update(objectDO, id);
+  const innerResult = await repository.update(objectDO, gameId);
   logger.debug(`${MODULE_NAME} (MID) -> innerResult: ${JSON.stringify(innerResult)}`);
 
   // Load the updated object
-  const updatedObj = await repository.getById(id);
+  const updatedObj = await repository.getById(gameId);
 
   // Build & Return result
   const result = presenter.presentObject(updatedObj);

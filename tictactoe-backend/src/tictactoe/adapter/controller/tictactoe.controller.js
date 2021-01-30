@@ -73,10 +73,11 @@ async function move(req, res, next) {
     // IN
     const data = req.body;
     const { gameId } = req.params;
-    logger.info(`${MODULE_NAME}:${move.name} (IN) -> data: ${JSON.stringify(data)}, gameId: ${gameId}`);
+    const { userId } = req.headers;
+    logger.info(`${MODULE_NAME}:${move.name} (IN) -> data: ${JSON.stringify(data)}, gameId: ${gameId}, userId: ${userId}`);
 
     // Execute Business Logic
-    const result = await tictactoeGameUC.move(data, gameId);
+    const result = await tictactoeGameUC.move(data, gameId, userId);
 
     // Return Result
     logger.info(`${MODULE_NAME}:${move.name} (OUT) -> result: ${JSON.stringify(result)}`);

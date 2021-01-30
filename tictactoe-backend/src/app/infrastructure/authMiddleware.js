@@ -12,6 +12,7 @@ const MODULE_NAME = '[Auth Middleware]';
 
 let tokenVerifyEndpoint;
 let tokenRefreshEndpoint;
+let getUserByTokenEndpoint;
 
 // //////////////////////////////////////////////////////////////////////////////
 // Private Methods
@@ -20,16 +21,28 @@ let tokenRefreshEndpoint;
 function handleAxiosError(funcName, error, res) {
   if (error.response) {
     logger.debug(`${MODULE_NAME}:${funcName} (ERROR) -> error.response.data: ${JSON.stringify(error.response.data)}, error.response.status: ${error.response.status}`);
-    const result = {
-      error: error.response.data,
-    };
-    res.status(error.response.status).send(result);
+
+    let jsonResult;
+    let statusResult;
+    if (error.response.status === 400) {
+      jsonResult = {
+        error: 'Not authenticated in the system',
+      };
+      statusResult = 403;
+    } else {
+      jsonResult = {
+        error: error.response.data,
+      };
+      statusResult = error.response.status;
+    }
+
+    res.status(statusResult).send(jsonResult);
   }
 }
 
 async function verifyToken(securityHeader) {
   // Call Verify Endpoint
-  logger.debug(`${MODULE_NAME} ${verifyToken.name} (IN) --> tokenVerifyEndpoint: ${tokenVerifyEndpoint}, securityHeaderIN: ${securityHeader}`);
+  logger.debug(`${MODULE_NAME} ${verifyToken.name} (IN) --> tokenVerifyEndpoint: ${tokenVerifyEndpoint}, securityHeader: ${securityHeader}`);
   const innerAxiosData = await axios.get(`${tokenVerifyEndpoint}`,
     {
       headers: {
@@ -44,7 +57,7 @@ async function verifyToken(securityHeader) {
 
 async function refreshToken(securityHeader, res) {
   // Call Verify Endpoint
-  logger.debug(`${MODULE_NAME} ${refreshToken.name} (IN) --> tokenVerifyEndpoint: ${tokenVerifyEndpoint}, securityHeaderIN: ${securityHeader}`);
+  logger.debug(`${MODULE_NAME} ${refreshToken.name} (IN) --> tokenVerifyEndpoint: ${tokenVerifyEndpoint}, securityHeader: ${securityHeader}`);
   const innerAxiosData = await axios.post(`${tokenRefreshEndpoint}`, {},
     {
       headers: {
@@ -58,13 +71,30 @@ async function refreshToken(securityHeader, res) {
   logger.debug(`${MODULE_NAME}:${refreshToken.name} (OUT) -> Done!`);
 }
 
+async function getUserByToken(securityHeader, req) {
+  // Call getUserInToken Endpoint
+  logger.debug(`${MODULE_NAME} ${getUserByToken.name} (IN) --> getUserByTokenEndpoint: ${getUserByTokenEndpoint}, securityHeader: ${securityHeader}`);
+  const innerAxiosData = await axios.get(`${getUserByTokenEndpoint}`,
+    {
+      headers: {
+        token: securityHeader,
+      },
+    });
+  const innerAxiosDataUser = innerAxiosData.data;
+  logger.debug(`${MODULE_NAME}:${getUserByToken.name} (MID) -> innerAxiosDataUser: ${JSON.stringify(innerAxiosDataUser)}`);
+  req.headers.userId = innerAxiosDataUser.id;
+
+  logger.debug(`${MODULE_NAME}:${getUserByToken.name} (OUT) -> Done!`);
+}
+
 // //////////////////////////////////////////////////////////////////////////////
 // PUBLIC METHODS
 // //////////////////////////////////////////////////////////////////////////////
 
-function init(tokenVerifyEndpointIN, tokenRefreshEndpointIN) {
+function init(tokenVerifyEndpointIN, tokenRefreshEndpointIN, getUserByTokenEndpointIN) {
   tokenVerifyEndpoint = tokenVerifyEndpointIN;
   tokenRefreshEndpoint = tokenRefreshEndpointIN;
+  getUserByTokenEndpoint = getUserByTokenEndpointIN;
 }
 
 async function authenticate(req, res, next) {
@@ -75,6 +105,8 @@ async function authenticate(req, res, next) {
     logger.debug(`${MODULE_NAME} ${authenticate.name} (MID) --> securityHeader: ${securityHeader}`);
 
     await verifyToken(securityHeader);
+
+    await getUserByToken(securityHeader, req);
 
     await refreshToken(securityHeader, res);
 
