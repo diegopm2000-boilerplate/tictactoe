@@ -43,7 +43,7 @@ const config = {};
 function loadConfig() {
   logger.debug(`${MODULE_NAME}:${loadConfig.name} (IN) -> no params`);
 
-  logger.debug(`${MODULE_NAME}:${loadConfig.name} (MID) -> loading config from environment`);
+  logger.debug(`${MODULE_NAME}:${loadConfig.name} (MID) -> loading config from environment...`);
 
   config.expressPort = process.env.EXPRESS_PORT;
   config.privateRoutes = process.env.PRIVATE_ROUTES;
