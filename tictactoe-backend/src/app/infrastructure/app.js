@@ -6,6 +6,8 @@ const bodyParser = require('body-parser');
 const swaggerUi = require('swagger-ui-express');
 const YAML = require('yamljs');
 
+const authMiddleware = require('./authMiddleware');
+
 const logger = require('../../shared/infrastructure/log/logFacade');
 const presenter = require('../../shared/adapter/presenter/httpPresenter');
 
@@ -30,9 +32,29 @@ const MODULE_NAME = '[App]';
 
 const API_DOCUMENT = './src/app/infrastructure/openapi.yaml';
 
+const DEFAULT_PORT = 8080;
+
+const config = {};
+
 // //////////////////////////////////////////////////////////////////////////////
 // PRIVATE METHODS
 // //////////////////////////////////////////////////////////////////////////////
+
+function loadConfig() {
+  logger.debug(`${MODULE_NAME}:${loadConfig.name} (IN) -> no params`);
+
+  logger.debug(`${MODULE_NAME}:${loadConfig.name} (MID) -> loading config from environment`);
+
+  config.expressPort = process.env.EXPRESS_PORT;
+  config.privateRoutes = process.env.PRIVATE_ROUTES;
+  config.tokenVerifyEndpoint = process.env.TOKEN_VERIFY_ENDPOINT;
+  config.tokenRefreshEndpoint = process.env.TOKEN_REFRESH_ENDPOINT;
+  config.mongoURL = process.env.MONGO_URL;
+
+  logger.debug(`${MODULE_NAME}:${loadConfig.name} (MID) -> config loaded: ${JSON.stringify(config)}`);
+
+  logger.debug(`${MODULE_NAME}:${loadConfig.name} (OUT) -> Done!`);
+}
 
 // eslint-disable-next-line no-unused-vars
 function errorHandler(err, req, res, next) {
@@ -49,11 +71,13 @@ function routeNotFoundErrorHandler(req, res, next) {
   res.status(404).json(errorObj);
 }
 
-function initExpress(expressConfig) {
-  logger.debug(`${MODULE_NAME}:${initExpress.name} (IN) -> expressConfig: ${JSON.stringify(expressConfig)}`);
+function initExpress(portIN) {
+  logger.debug(`${MODULE_NAME}:${initExpress.name} (IN) -> portIN: ${portIN}`);
   const expressApp = express();
 
-  expressApp.listen(expressConfig.port);
+  const port = portIN || DEFAULT_PORT;
+
+  expressApp.listen(port);
 
   logger.debug(`${MODULE_NAME}:${initExpress.name} (OUT) -> expressApp: <<expressApp>>`);
   return expressApp;
@@ -85,6 +109,17 @@ function initSwaggerUI(expressApp) {
   expressApp.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 }
 
+function initPrivateRouting(expressApp, privateRoutes, tokenVerifyEndpoint, tokenRefreshEndpoint) {
+  logger.debug(`${MODULE_NAME}:${initPrivateRouting.name} (IN) -> expressApp: <<expressApp>>, privateRoutes: ${privateRoutes}, tokenVerifyEndpoint: ${tokenVerifyEndpoint}`);
+
+  if (privateRoutes) {
+    authMiddleware.init(tokenVerifyEndpoint, tokenRefreshEndpoint);
+    logger.debug(`${MODULE_NAME}:${initPrivateRouting.name} (MID) -> init privateroutes in express`);
+    expressApp.all(privateRoutes, authMiddleware.authenticate);
+  }
+  logger.debug(`${MODULE_NAME}:${initPrivateRouting.name} (OUT) -> Done`);
+}
+
 function initHealthcheckUC() {
   logger.debug(`${MODULE_NAME}:${initHealthcheckUC.name} (IN) -> no params`);
 
@@ -110,34 +145,35 @@ exports.init = async () => {
   logger.defaultInit();
   logger.debug(`${MODULE_NAME}:init (IN) --> no params`);
 
-  // 2. Load Config from environment
-  const expressPort = process.env.EXPRESS_PORT;
-  logger.debug(`${MODULE_NAME}:init (MID) --> expressPort: ${expressPort}`);
+  // 2. Load config from environment
+  loadConfig();
 
   // 3. Init Express
-  const expressConfig = { port: expressPort };
-  const expressApp = initExpress(expressConfig);
+  const expressApp = initExpress(config.expressPort);
 
   // 4. Init Web Security
   webSecurity.init(expressApp);
 
-  // 5. Init ExpressOpenApi
+  // 5. Private Routes - (put this before ExpresOpenApi Middleware)
+  initPrivateRouting(expressApp, config.privateRoutes, config.tokenVerifyEndpoint, config.tokenRefreshEndpoint);
+
+  // 6. Init ExpressOpenApi
   await initExpressOpenAPI(expressApp);
 
-  // 6. Expose documentation using swagger-ui-express
+  // 7. Expose documentation using swagger-ui-express
   initSwaggerUI(expressApp);
 
-  // 7. Route for handle the 404 route not found
+  // 8. Route for handle the 404 route not found
   expressApp.use(routeNotFoundErrorHandler);
 
-  // 8. Mongo init
-  await mongoInfra.init({ mongoURL: process.env.MONGO_URL });
+  // 9. Mongo init
+  await mongoInfra.init({ mongoURL: config.mongoURL });
 
-  // 9. User UseCases
+  // 10. User UseCases
   initHealthcheckUC();
   initTicTacToeUC();
 
-  // 7. App Start Result
+  // 11. App Start Result
   const result = true;
   logger.debug(`${MODULE_NAME}:init (OUT) -> App started: ${JSON.stringify(result)}`);
   return result;
